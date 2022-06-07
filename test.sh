@@ -1,15 +1,22 @@
 #!/bin/bash
 
+function compile {
+    echo "$1" | ./tcc > tmp.s
+    if [ $? -ne 0]; then
+        echo "Failed to compile $1"
+        exit
+    fi
+    gcc -o tmp.out driver.c tmp.s
+    if [ $? -ne 0 ]; then
+        echo "GCC failed"
+        exit
+    fi
+}
+
 function test {
     expected="$1"
     expr="$2"
-
-    echo "$expr" | ./tcc > tmp.s
-    if [ ! $? ];then
-        echo "Failed to compile $expr"
-        exit
-    fi
-    gcc -o tmp.out driver.c tmp.s || exit
+    compile "$expr"
     result="`./tmp.out`"
     if ["$result" != "$expected"];then
         echo "Test failed: $expected expected but got $result"
@@ -17,10 +24,22 @@ function test {
     fi
 }
 
+function testfail {
+    expr="$1"
+    echo "$expr" | ./tcc > /dev/null 2>&1
+    if [ $? -eq 0]; then
+        echo "Should fail to compile, but succeded: $expr"
+        exit
+    fi
+}
+
 make -s tcc
 
 test 0 0
-test 42 42
+test abc '"abc"'
+
+testfail '"abc"'
+testfail '0abc'
 
 rm -f tmp.out tmp.s
 echo "All tests passed"
