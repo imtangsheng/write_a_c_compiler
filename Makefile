@@ -1,3 +1,5 @@
+CFLAGS=-Wall
+
 tcc: tcc.o
 
 clean:
